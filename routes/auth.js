@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const { check, validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 const config = require("config");
+const auth = require("../middleware/auth");
 
 const User = require("../models/User");
 
@@ -18,7 +19,7 @@ router
       if (!validationResult(req)) {
         return res.status(400).json({ errors: validationResult(req).array() });
       }
-      const { name, email, password } = req.body;
+      const { email, password } = req.body;
       try {
         let user = await User.findOne({ email });
         if (!user) {
@@ -46,5 +47,14 @@ router
         res.status(500).send("Server Error");
       }
     }
-  );
+  )
+  .get(auth, async (req, res) => {
+    try {
+      const user = await User.findById(req.user.id).select("-password");
+      res.json(user);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  });
 module.exports = router;
